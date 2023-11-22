@@ -62,6 +62,9 @@ mixin AssetClass {
       return word[0].toUpperCase() + word.substring(1);
     }).join('');
 
+    //TODO: Minor suggestion
+    // final k = _pubspec['name'].toString().split("").first.toUpperCase();
+
     return '${name}Assets';
   }
 
