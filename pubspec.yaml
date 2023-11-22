@@ -1,0 +1,22 @@
+name: assetlib
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.2.0
+
+flutter:
+  assets:
+    - assets/menu.svg
+    - assets/images/
+    - assets/
+
+# Add regular dependencies here.
+dependencies:
+  yaml: ^3.1.2
+  args: ^2.4.2
+
+dev_dependencies:
+  lints: ^2.1.0
+  test: ^1.24.0
