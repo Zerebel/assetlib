@@ -12,6 +12,7 @@ mixin AssetClass {
   /// - [help] - Show this help message.
   /// - [version] - Show the version of this application.
   ArgParser get arguments => ArgParser()
+    // TODO: path from arguments should exist in pubspec.yaml
     ..addOption('path',
         abbr: 'p', defaultsTo: '.', help: 'Path to the asset directory.')
     ..addOption('class',

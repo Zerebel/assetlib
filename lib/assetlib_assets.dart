@@ -2,8 +2,8 @@
 ///* GENERATED CODE - DO NOT MODIFY BY HAND *///
 ///* GENERATED CODE - DO NOT MODIFY BY HAND *///
 
-class AssetlibAssets {
-  AssetlibAssets._();
+class wopeAssets {
+  wopeAssets._();
 
 /// assets/menu.svg
   static const String menu = 'assets/menu.svg';

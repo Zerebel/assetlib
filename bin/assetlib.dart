@@ -105,6 +105,8 @@ class Generator with AssetClass {
     final String key = name.split('.').first;
     final String value = entity.path;
 
+    // TODO: add support for prefix
+
     final generatedAsset = '  static const String $key = \'$value\';';
 
     if (_writtenAssets.contains(generatedAsset)) {
