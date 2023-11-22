@@ -38,7 +38,7 @@ class Generator with AssetClass {
 
   /// Initialize the generator.
   /// - [results] - The command-line arguments.
-  init() {
+  init() async {
     final className = results?['class'] ?? defaultClassName;
 
     final filePath = results?['output'] ?? defaultOutput;
@@ -46,8 +46,8 @@ class Generator with AssetClass {
     if (FileSystemEntity.isDirectorySync(filePath)) {
       stdout.writeln('Generating $className in $filePath...');
     } else {
-      stdout.writeln('The output path is not a directory.');
-      stdout.writeln('Run `assetlib --help` for more information.');
+      stdout.writeln('[INFO] The output path is not a directory.');
+      stdout.writeln('[INFO] Run `assetlib --help` for more information.');
       exit(1);
     }
 
@@ -75,13 +75,15 @@ class Generator with AssetClass {
 
     sink.writeln('}');
     sink.close();
+
+    stdout.writeln('[INFO] Formatting assets file');
+    await Process.run("dart", ["format"]);
   }
 
   final List<String> _writtenAssets = [];
 
   _writeAssetsFromDirectory(Directory directory, IOSink sink) {
-    final List<FileSystemEntity> entities =
-        directory.listSync().skipWhile((entity) {
+    final entities = directory.listSync().skipWhile((entity) {
       return FileSystemEntity.isDirectorySync(entity.path);
     }).toList();
 
@@ -91,7 +93,8 @@ class Generator with AssetClass {
     }
 
     stdout.writeln(
-        'Found ${entities.length} file${entities.length > 1 ? 's' : ''} in ${directory.path}');
+      'Found ${entities.length} file${entities.length > 1 ? 's' : ''} in ${directory.path}',
+    );
 
     for (var entity in entities) {
       stdout.writeln('');
