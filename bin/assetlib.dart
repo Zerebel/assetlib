@@ -65,7 +65,8 @@ class Generator with AssetClass {
     for (var path in defaultPaths) {
       sink.writeln('/// $path');
       if (FileSystemEntity.isDirectorySync(path)) {
-        _writeAssetsFromDirectory(Directory(path), sink, _results['prefix']);
+        _writeAssetsFromDirectory(
+            Directory(path), sink, _results['prefix'], classFile);
       } else {
         _writeAssetFromFile(File(path), sink, _results['prefix']);
       }
@@ -87,11 +88,15 @@ class Generator with AssetClass {
 
   final List<String> _writtenAssets = [];
 
-  _writeAssetsFromDirectory(Directory directory, IOSink sink, String? prefix) {
+  _writeAssetsFromDirectory(
+      Directory directory, IOSink sink, String? prefix, File classFile) {
     final List<FileSystemEntity> entities =
         directory.listSync().skipWhile((entity) {
-      return FileSystemEntity.isDirectorySync(entity.path);
+      return FileSystemEntity.isDirectorySync(entity.path) ||
+          entity.path == classFile.path;
     }).toList();
+
+    print(entities);
 
     if (entities.isEmpty) {
       stdout.writeln('No assets found in ${directory.path}.....');
