@@ -10,15 +10,15 @@ void main(List<String> args) {
 class Generator with AssetClass {
   /// The command-line arguments.
   final List<String> _args;
+  late final Map<String, dynamic> _results;
 
   /// Create an instance of [Generator] with the given command-line arguments.
   /// - [args] - The command-line arguments.
   Generator(this._args) {
     final ArgPasser arguments = ArgPasser(_args);
-    final results = arguments.parse();
 
     if (arguments.hasVersion) {
-      stdout.writeln('assetlib version: ${results['version']}');
+      stdout.writeln('assetlib version: ${arguments.version}');
       exit(1);
     }
 
@@ -29,6 +29,8 @@ class Generator with AssetClass {
       stdout.write('${arguments.usage}\n');
       exit(1);
     }
+
+    _results = arguments.parse();
 
     init();
   }
@@ -63,9 +65,9 @@ class Generator with AssetClass {
     for (var path in defaultPaths) {
       sink.writeln('/// $path');
       if (FileSystemEntity.isDirectorySync(path)) {
-        _writeAssetsFromDirectory(Directory(path), sink);
+        _writeAssetsFromDirectory(Directory(path), sink, _results['prefix']);
       } else {
-        _writeAssetFromFile(File(path), sink);
+        _writeAssetFromFile(File(path), sink, _results['prefix']);
       }
       sink.writeln('');
     }
@@ -85,7 +87,7 @@ class Generator with AssetClass {
 
   final List<String> _writtenAssets = [];
 
-  _writeAssetsFromDirectory(Directory directory, IOSink sink) {
+  _writeAssetsFromDirectory(Directory directory, IOSink sink, String? prefix) {
     final List<FileSystemEntity> entities =
         directory.listSync().skipWhile((entity) {
       return FileSystemEntity.isDirectorySync(entity.path);
@@ -102,16 +104,14 @@ class Generator with AssetClass {
     for (var entity in entities) {
       stdout.writeln('');
 
-      _writeAssetFromFile(entity, sink);
+      _writeAssetFromFile(entity, sink, prefix);
     }
   }
 
-  _writeAssetFromFile(FileSystemEntity entity, IOSink sink) {
+  _writeAssetFromFile(FileSystemEntity entity, IOSink sink, String? prefix) {
     final String name = entity.path.split('/').last;
-    final String key = name.split('.').first;
+    final String key = (prefix ?? '') + name.split('.').first;
     final String value = entity.path;
-
-    // TODO: add support for prefix
 
     final generatedAsset = '  static const String $key = \'$value\';';
 

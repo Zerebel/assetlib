@@ -63,35 +63,10 @@ class ArgPasser {
   // parse function
   Map<String, dynamic> parse() {
     // check for invalid arguments and unknown flags
-    for (var arg in args) {
-      if (arg.startsWith('-')) {
-        if (![
-          '-v',
-          '--version',
-          '-h',
-          '--help',
-          '-p',
-          '--prefix',
-          '-o',
-          '--output',
-          '-c',
-          '--class'
-        ].contains(arg)) {
-          throw Exception('''Unknown flag $arg
-          Run `assetlib --help` for more information.
-          ''');
-        }
-      } else {
-        throw Exception('''Invalid argument $arg
-            Run `assetlib --help` for more information.
-            ''');
-      }
-    }
+    invalidArgument();
 
     return {
-      'version': version,
-      'help': hasHelp,
-      'prefix': hasPrefix,
+      'prefix': prefix,
       'output': output,
       'className': className,
     };
@@ -139,4 +114,40 @@ class ArgPasser {
     -o, --output     Path to the generated asset class file.
     -c, --class      Name of the generated asset class.
   ''';
+
+  void invalidArgument() {
+    Map<String, String> flags = {};
+    for (var i = 0; i < args.length; i += 2) {
+      if (args[i].startsWith('-')) {
+        if ([
+          '-v',
+          '--version',
+          '-h',
+          '--help',
+          '-p',
+          '--prefix',
+          '-o',
+          '--output',
+          '-c',
+          '--class'
+        ].contains(args[i])) {
+          if (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+            flags[args[i]] = args[i + 1];
+          } else {
+            throw Exception('''Expected a value after ${args[i]}
+                Run `assetlib --help` for more information.
+                ''');
+          }
+        } else {
+          throw Exception('''Unknown flag ${args[i]}
+              Run `assetlib --help` for more information.
+              ''');
+        }
+      } else {
+        throw Exception('''Invalid argument ${args[i]}
+            Run `assetlib --help` for more information.
+            ''');
+      }
+    }
+  }
 }
