@@ -12,5 +12,6 @@ class AssetlibAssets {
   static const String pubg = 'assets/images/pubg.svg';
 
   /// assets/
+  static const String images = 'assets/images';
   static const String video = 'assets/video.mp4';
 }

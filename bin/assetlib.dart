@@ -64,6 +64,7 @@ class Generator with AssetClass {
 
     for (var path in defaultPaths) {
       sink.writeln('/// $path');
+
       if (FileSystemEntity.isDirectorySync(path)) {
         _writeAssetsFromDirectory(
             Directory(path), sink, _results['prefix'], classFile);
@@ -114,6 +115,11 @@ class Generator with AssetClass {
   }
 
   _writeAssetFromFile(FileSystemEntity entity, IOSink sink, String? prefix) {
+    if (entity.path.endsWith('.dart')) {
+      stdout.writeln('Skipping ${entity.path}.....');
+      return;
+    }
+
     final String name = entity.path.split('/').last;
     final String key = (prefix ?? '') + name.split('.').first;
     final String value = entity.path;
