@@ -2,16 +2,15 @@
 ///* GENERATED CODE - DO NOT MODIFY BY HAND *///
 ///* GENERATED CODE - DO NOT MODIFY BY HAND *///
 
-class wopeAssets {
-  wopeAssets._();
+class AssetlibAssets {
+  AssetlibAssets._();
 
-/// assets/menu.svg
+  /// assets/menu.svg
   static const String menu = 'assets/menu.svg';
 
-/// assets/images/
+  /// assets/images/
   static const String pubg = 'assets/images/pubg.svg';
 
-/// assets/
+  /// assets/
   static const String video = 'assets/video.mp4';
-
 }

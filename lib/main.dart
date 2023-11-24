@@ -1,84 +1,50 @@
 import 'dart:io';
 
-import 'package:args/args.dart';
-import 'package:yaml/yaml.dart';
-
 mixin AssetClass {
-  /// The [ArgParser] for parsing the command-line arguments.
-  /// - [path] - Path to the asset directory.
-  /// - [class] - Name of the generated asset class.
-  /// - [output] - Path to the generated asset class file.
-  /// - [prefix] - Prefix to add to the asset class members.
-  /// - [help] - Show this help message.
-  /// - [version] - Show the version of this application.
-  ArgParser get arguments => ArgParser()
-    // TODO: path from arguments should exist in pubspec.yaml
-    ..addOption('path',
-        abbr: 'p', defaultsTo: '.', help: 'Path to the asset directory.')
-    ..addOption('class',
-        abbr: 'c',
-        defaultsTo: defaultClassName,
-        help: 'Name of the generated asset class.')
-    ..addOption('output',
-        abbr: 'o',
-        defaultsTo: defaultOutput,
-        help: 'Path to the generated asset class file.')
-    ..addOption('prefix',
-        abbr: 'x',
-        defaultsTo: '',
-        help: 'Prefix to add to the asset class members.')
-    ..addFlag('help',
-        abbr: 'h', negatable: false, help: 'Show this help message.')
-    ..addFlag('version',
-        abbr: 'v',
-        negatable: false,
-        help: 'Show the version of this application.');
+  final pubspecFileContent = File('pubspec.yaml').readAsStringSync();
 
-  /// The content of the [pubspec.yaml] file.
-  final _pubspec = loadYaml(File('pubspec.yaml').readAsStringSync());
-
-  /// - [version] - Version of the application.
-  String get version => _pubspec['version'];
-
-  /// Default Directory for assets from pubspec.yaml
-  /// - [path] - Default Path to the asset directory.
-  ///     default: 'assets/'
-  YamlList get defaultPaths {
-    if (_pubspec['flutter'] == null) {
-      throw Exception('flutter section not found in pubspec.yaml');
-    }
-    return _pubspec['flutter']['assets'];
+  String? get name {
+    return RegExp(r'name: (.*)').firstMatch(pubspecFileContent)?.group(1);
   }
 
-  /// - [Class] - Default Name of the generated asset class.
-  ///    default: 'ProjectNameAssets'
+  /// Get name of the application from pubspec.yaml
+  /// - [name] - Name of the application.
   String get defaultClassName {
-    if (_pubspec['name'] == null) {
+    if (name == null) {
       throw Exception('name section not found in pubspec.yaml');
     }
 
-    // capitalize first word
-    final name = _pubspec['name'].toString().split(' ').map((word) {
-      return word[0].toUpperCase() + word.substring(1);
-    }).join('');
-
-    return '${name}Assets';
+    return '${name!.substring(0, 1).toUpperCase() + name!.substring(1)}Assets';
   }
 
-  /// - [File] - Default name of the generated asset class file.
-  ///
-  String get defaultFileName {
-    if (_pubspec['name'] == null) {
-      throw Exception('name section not found in pubspec.yaml');
+  /// - [defaultPaths] - Default Directory for assets from pubspec.yaml
+  /// - [path] - Default Path to the asset directory.
+  List<String> get defaultPaths {
+    final lines = pubspecFileContent.split('\n');
+    final assetsIndex = lines.indexWhere((line) => line.trim() == 'assets:');
+    if (assetsIndex == -1) {
+      throw Exception('assets section not found in pubspec.yaml');
     }
 
-    final name = _pubspec['name'] as String;
+    final paths = <String>[];
+    for (var i = assetsIndex + 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.startsWith('-')) {
+        paths.add(line.substring(1).trim());
+      } else if (line.isNotEmpty) {
+        break;
+      }
+    }
 
-    return '${name}_assets.dart';
+    return paths;
   }
 
-  /// - [output] - Default Path to the generated asset class file.
-  ///   default: 'lib/assets.dart'
+  /// - [defaultFileName] - Default Name of the generated asset class.
+  ///   default: 'projectName_assets'
+  String get defaultFileName => '${name}_assets.dart';
+
+  /// - [defaultOutput] - Default Path to the generated asset class file.
+  ///  default: 'lib/'
   String get defaultOutput {
     final String path = 'lib/';
     if (!(Directory(path).existsSync())) {
@@ -87,4 +53,90 @@ mixin AssetClass {
 
     return path;
   }
+}
+
+class ArgPasser {
+  final List<String> args;
+
+  ArgPasser(this.args);
+
+  // parse function
+  Map<String, dynamic> parse() {
+    // check for invalid arguments and unknown flags
+    for (var arg in args) {
+      if (arg.startsWith('-')) {
+        if (![
+          '-v',
+          '--version',
+          '-h',
+          '--help',
+          '-p',
+          '--prefix',
+          '-o',
+          '--output',
+          '-c',
+          '--class'
+        ].contains(arg)) {
+          throw Exception('''Unknown flag $arg
+          Run `assetlib --help` for more information.
+          ''');
+        }
+      } else {
+        throw Exception('''Invalid argument $arg
+            Run `assetlib --help` for more information.
+            ''');
+      }
+    }
+
+    return {
+      'version': version,
+      'help': hasHelp,
+      'prefix': hasPrefix,
+      'output': output,
+      'className': className,
+    };
+  }
+
+  bool get hasVersion => args.contains('-v') || args.contains('--version');
+
+  bool get hasHelp => args.contains('-h') || args.contains('--help');
+
+  bool get hasPrefix => args.contains('-p') || args.contains('--prefix');
+
+  String? get prefix {
+    final index = args.indexWhere((arg) => arg == '-p' || arg == '--prefix');
+    if (index == -1) {
+      return null;
+    }
+
+    return args[index + 1];
+  }
+
+  String? get output {
+    final index = args.indexWhere((arg) => arg == '-o' || arg == '--output');
+    if (index == -1) {
+      return null;
+    }
+
+    return args[index + 1];
+  }
+
+  String? get className {
+    final index = args.indexWhere((arg) => arg == '-c' || arg == '--class');
+    if (index == -1) {
+      return null;
+    }
+
+    return args[index + 1];
+  }
+
+  String version = '0.0.1';
+
+  String usage = '''
+    -h, --help       Show this help message.
+    -v, --version    Show the version of this application.
+    -p, --prefix     Prefix to add to the asset class members.
+    -o, --output     Path to the generated asset class file.
+    -c, --class      Name of the generated asset class.
+  ''';
 }
