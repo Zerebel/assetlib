@@ -93,7 +93,15 @@ class ArgPasser {
       return null;
     }
 
-    return args[index + 1];
+    final path = args[index + 1];
+
+    if (FileSystemEntity.isDirectorySync(path)) {
+      return path;
+    } else {
+      throw Exception('''The output path is not a directory.
+          Run `assetlib --help` for more information.
+          ''');
+    }
   }
 
   String? get className {
