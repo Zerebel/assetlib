@@ -97,8 +97,6 @@ class Generator with AssetClass {
           entity.path == classFile.path;
     }).toList();
 
-    print(entities);
-
     if (entities.isEmpty) {
       stdout.writeln('No assets found in ${directory.path}.....');
       return;
