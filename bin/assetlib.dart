@@ -38,9 +38,9 @@ class Generator with AssetClass {
   /// Initialize the generator.
   /// - [results] - The command-line arguments.
   init() {
-    final className = defaultClassName;
+    final className = _results['className'] ?? defaultClassName;
 
-    final filePath = defaultOutput;
+    final filePath = _results['output'] ?? defaultOutput;
 
     if (FileSystemEntity.isDirectorySync(filePath)) {
       stdout.writeln('Generating $defaultFileName in $filePath...');
