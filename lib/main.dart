@@ -69,6 +69,7 @@ class ArgPasser {
       'prefix': prefix,
       'output': output,
       'className': className,
+      'source': source,
     };
   }
 
@@ -104,6 +105,24 @@ class ArgPasser {
     }
   }
 
+  String? get source {
+    final index = args.indexWhere((arg) => arg == '-s' || arg == '--source');
+    if (index == -1) {
+      return null;
+    }
+
+    final path = args[index + 1];
+
+    if (FileSystemEntity.isDirectorySync(path)) {
+      return path;
+    } else {
+      throw PathNotFoundException(
+          path, OSError(), '''The output path is not a directory.
+          Run `assetlib --help` for more information.
+          ''');
+    }
+  }
+
   String? get className {
     final index = args.indexWhere((arg) => arg == '-c' || arg == '--class');
     if (index == -1) {
@@ -120,6 +139,7 @@ class ArgPasser {
     -v, --version    Show the version of this application.
     -p, --prefix     Prefix to add to the asset class members.
     -o, --output     Path to the generated asset class file.
+    -s, --source     Path to the root directory.
     -c, --class      Name of the generated asset class.
   ''';
 
@@ -136,6 +156,8 @@ class ArgPasser {
           '--prefix',
           '-o',
           '--output',
+          '-s',
+          '--source',
           '-c',
           '--class'
         ].contains(args[i])) {
