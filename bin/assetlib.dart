@@ -1,5 +1,5 @@
 import 'dart:io';
-import '../lib/main.dart';
+import 'package:assetlib/main.dart';
 
 void main(List<String> args) {
   exitCode = 0; // presume success
