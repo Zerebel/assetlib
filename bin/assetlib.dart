@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:assetlib/main.dart';
+import '../lib/main.dart';
 
 void main(List<String> args) {
   exitCode = 0; // presume success
@@ -40,10 +40,12 @@ class Generator with AssetClass {
   init() {
     final className = _results['className'] ?? defaultClassName;
 
-    final filePath = _results['output'] ?? defaultOutput;
+    var filePath = _results['output'] ?? defaultOutput;
+
+    filePath = _results['source'] ?? (_results['source'] ?? '') + filePath;
 
     if (FileSystemEntity.isDirectorySync(filePath)) {
-      stdout.writeln('Generating $defaultFileName in $filePath...');
+      stdout.writeln('Generating $defaultFileName in $filePath');
     } else {
       stdout.writeln('The output path is not a directory.');
       stdout.writeln('Run `assetlib --help` for more information.');
@@ -63,11 +65,14 @@ class Generator with AssetClass {
     sink.writeln('  $className._();\n');
 
     for (var path in defaultPaths) {
-      sink.writeln('/// $path');
-
       if (FileSystemEntity.isDirectorySync(path)) {
+        sink.writeln('  /// $path');
         _writeAssetsFromDirectory(
-            Directory(path), sink, _results['prefix'], classFile);
+          Directory(path),
+          sink,
+          _results['prefix'],
+          classFile,
+        );
       } else {
         _writeAssetFromFile(File(path), sink, _results['prefix']);
       }
@@ -90,12 +95,23 @@ class Generator with AssetClass {
   final List<String> _writtenAssets = [];
 
   _writeAssetsFromDirectory(
-      Directory directory, IOSink sink, String? prefix, File classFile) {
-    final List<FileSystemEntity> entities =
-        directory.listSync().skipWhile((entity) {
-      return FileSystemEntity.isDirectorySync(entity.path) ||
-          entity.path == classFile.path;
-    }).toList();
+    Directory directory,
+    IOSink sink,
+    String? prefix,
+    File classFile,
+  ) {
+    final List<FileSystemEntity> entities = directory.listSync();
+
+    for (var entity in entities) {
+      if (FileSystemEntity.isDirectorySync(entity.path)) {
+        // sink.writeln('  /// ${entity.path}');
+        _writeAssetsFromDirectory(
+            Directory(entity.path), sink, prefix, classFile);
+      } else if (entity.path != classFile.path) {
+        stdout.writeln('');
+        _writeAssetFromFile(entity, sink, prefix);
+      }
+    }
 
     if (entities.isEmpty) {
       stdout.writeln('No assets found in ${directory.path}.....');
@@ -104,12 +120,6 @@ class Generator with AssetClass {
 
     stdout.writeln(
         'Found ${entities.length} file${entities.length > 1 ? 's' : ''} in ${directory.path}');
-
-    for (var entity in entities) {
-      stdout.writeln('');
-
-      _writeAssetFromFile(entity, sink, prefix);
-    }
   }
 
   _writeAssetFromFile(FileSystemEntity entity, IOSink sink, String? prefix) {
@@ -122,12 +132,21 @@ class Generator with AssetClass {
     final String key = (prefix ?? '') + name.split('.').first;
     final String value = entity.path;
 
-    final generatedAsset = '  static const String $key = \'$value\';';
+    // key should follow the variable naming rules, if not, replace with a valid name with a warning
+    if (key.contains(RegExp(r'[^a-zA-Z0-9_]'))) {
+      stdout.writeln(
+          'Warning: $key contains invalid characters. Replacing with a valid name...');
+    }
+    final modifiedKey = key.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+
+    final generatedAsset = '  static const String $modifiedKey = \'$value\';';
 
     if (_writtenAssets.contains(generatedAsset)) {
       stdout.writeln('Asset $name already exists.');
       return;
     }
+
+    sink.writeln('/// ${entity.path}');
 
     sink.writeln(generatedAsset);
     _writtenAssets.add(generatedAsset);
