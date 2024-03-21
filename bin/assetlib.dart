@@ -66,7 +66,6 @@ class Generator with AssetClass {
 
     for (var path in defaultPaths) {
       if (FileSystemEntity.isDirectorySync(path)) {
-        sink.writeln('  /// $path');
         _writeAssetsFromDirectory(
           Directory(path),
           sink,
@@ -92,7 +91,7 @@ class Generator with AssetClass {
     });
   }
 
-  final List<String> _writtenAssets = [];
+  final List<Map<String, dynamic>> _writtenAssets = [];
 
   _writeAssetsFromDirectory(
     Directory directory,
@@ -104,10 +103,16 @@ class Generator with AssetClass {
 
     for (var entity in entities) {
       if (FileSystemEntity.isDirectorySync(entity.path)) {
-        // sink.writeln('  /// ${entity.path}');
         _writeAssetsFromDirectory(
-            Directory(entity.path), sink, prefix, classFile);
+          Directory(entity.path),
+          sink,
+          prefix,
+          classFile,
+        );
       } else if (entity.path != classFile.path) {
+        if (_writtenAssets.any((element) => element['path'] == entity.path)) {
+          continue;
+        }
         stdout.writeln('');
         _writeAssetFromFile(entity, sink, prefix);
       }
@@ -117,9 +122,6 @@ class Generator with AssetClass {
       stdout.writeln('No assets found in ${directory.path}.....');
       return;
     }
-
-    stdout.writeln(
-        'Found ${entities.length} file${entities.length > 1 ? 's' : ''} in ${directory.path}');
   }
 
   _writeAssetFromFile(FileSystemEntity entity, IOSink sink, String? prefix) {
@@ -132,24 +134,34 @@ class Generator with AssetClass {
     final String key = (prefix ?? '') + name.split('.').first;
     final String value = entity.path;
 
-    // key should follow the variable naming rules, if not, replace with a valid name with a warning
     if (key.contains(RegExp(r'[^a-zA-Z0-9_]'))) {
       stdout.writeln(
           'Warning: $key contains invalid characters. Replacing with a valid name...');
     }
-    final modifiedKey = key.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+    var modifiedKey = key.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+
+    if (_writtenAssets.any((element) => element['key'] == modifiedKey)) {
+      stdout.writeln('Asset $modifiedKey already exists.');
+      stdout.writeln('Appending a number to the asset name.....');
+
+      final asset =
+          _writtenAssets.firstWhere((element) => element['key'] == modifiedKey);
+      final count = int.parse(asset['count']?.toString() ?? '0') + 1;
+
+      modifiedKey = modifiedKey + count.toString();
+
+      asset['count'] = count;
+
+      _writtenAssets.add({'path': entity.path, 'key': modifiedKey, 'count': 0});
+    }
 
     final generatedAsset = '  static const String $modifiedKey = \'$value\';';
-
-    if (_writtenAssets.contains(generatedAsset)) {
-      stdout.writeln('Asset $name already exists.');
-      return;
-    }
 
     sink.writeln('/// ${entity.path}');
 
     sink.writeln(generatedAsset);
-    _writtenAssets.add(generatedAsset);
+
+    _writtenAssets.add({'path': entity.path, 'key': modifiedKey});
   }
 
   factory Generator.fromArgs(List<String> args) {
